@@ -22,3 +22,5 @@ run:
 
 
 all: build run
+
+.DEFAULT_GOAL := all
