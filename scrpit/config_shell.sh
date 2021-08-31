@@ -10,14 +10,14 @@ export PATH=$PATH:$CURR_DIR
 
 
 
-echo "检查docker阿里云镜像"
+echo "检查docker腾讯云镜像"
 if [ ! -d "/etc/docker" ]; then
     mkdir -p /etc/docker
 fi
 if [ ! -f "/etc/docker/daemon.json" ]; then
     sudo tee /etc/docker/daemon.json <<- EOF
 {
-    "insecure-registries":["172.16.5.220:5000"]
+    "registry-mirrors":["https://mirror.ccs.tencentyun.com"]
 }
 EOF
     sudo usermod -a -G docker vagrant
@@ -66,8 +66,9 @@ fi
 
 
 
-step "检查密钥 git.wowkai.cn"
-gitlab_host="git.wowkai.cn"
+step "检查密钥"
+read -p  'gitlab地址(如 git.gitlab.com): ' gitlab_host
+
 if ! [ -f "$CURR_DIR/gitlab_keypair" ]; then
     section 'installing git key.'
     set -eu
