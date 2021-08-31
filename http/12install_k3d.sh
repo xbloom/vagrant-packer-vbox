@@ -1,10 +1,13 @@
-#!/usr/bin/env bash
+#!/bin/bash
+set -e
 
 APP_NAME="k3d"
 REPO_URL="https://github.com/rancher/k3d"
+API_QUERY_URL="https://api.github.com/repos/rancher/k3d"
+MIRRO_URL="http://172.16.3.120:9000/software"
 
 : ${USE_SUDO:="true"}
-: ${K3D_INSTALL_DIR:="/usr/local/bin"}
+: ${K3D_INSTALL_DIR:="/usr/bin"}
 
 # initArch discovers the architecture for this system.
 initArch() {
@@ -82,9 +85,9 @@ checkTagProvided() {
 
 # checkLatestVersion grabs the latest version string from the releases
 checkLatestVersion() {
-  local latest_release_url="$REPO_URL/releases/latest"
+  local latest_release_url="$API_QUERY_URL/releases/latest"
   if type "curl" > /dev/null; then
-    TAG=$(curl -Ls -o /dev/null -w %{url_effective} $latest_release_url | grep -oE "[^/]+$" )
+    TAG=$(curl -SsL $latest_release_url | grep -Eo '"tag_name": "v(.*)"' | sed -E 's/.*"([^"]+)".*/\1/' )
   elif type "wget" > /dev/null; then
     TAG=$(wget $latest_release_url --server-response -O /dev/null 2>&1 | awk '/^\s*Location: /{DEST=$2} END{ print DEST}' | grep -oE "[^/]+$")
   fi
@@ -98,7 +101,8 @@ downloadFile() {
   K3D_TMP_ROOT="$(mktemp -dt k3d-binary-XXXXXX)"
   K3D_TMP_FILE="$K3D_TMP_ROOT/$K3D_DIST"
   if type "curl" > /dev/null; then
-    curl -SsL "$DOWNLOAD_URL" -o "$K3D_TMP_FILE"
+    # curl -SsL "$DOWNLOAD_URL" -o "$K3D_TMP_FILE"
+    curl -SsL "$MIRRO_URL/$K3D_DIST-$TAG" -o "$K3D_TMP_FILE"
   elif type "wget" > /dev/null; then
     wget -q -O "$K3D_TMP_FILE" "$DOWNLOAD_URL"
   fi
@@ -131,6 +135,7 @@ fail_trap() {
 
 # testVersion tests the installed client to make sure it is working.
 testVersion() {
+  which k3d
   if ! command -v $APP_NAME &> /dev/null; then
     echo "$APP_NAME not found. Is $K3D_INSTALL_DIR on your "'$PATH?'
     exit 1

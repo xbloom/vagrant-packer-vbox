@@ -1,0 +1,83 @@
+{
+    "variables": {
+      "name":                 "rocky-8.4-k3d-4.8.8",
+      "user":                 "root",
+      "password":             "cjdg",
+      "size":                 "81920",
+      "memory":               "1024",
+      "cpus":                 "2",
+      "mirror":               "/Users/devs/Downloads/Rocky-8.4-x86_64-minimal.iso",
+      "md5sum":               "21cb8b195ad41c20210bdb4435149867"
+    },
+  
+    "builders": [
+      { 
+        "name":               "{{user `name`}}-vbox",
+        "type":               "virtualbox-iso",
+
+        "guest_os_type":      "RedHat_64",
+        "disk_size":          "{{user `size`}}",
+        "headless":           true,
+
+        "boot_wait":          "3s",
+        "boot_command": [
+          "<tab> text inst.ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{user `name`}}-ks.cfg<enter><wait>"
+        ],
+  
+        "iso_url":            "{{user `mirror`}}",
+        "iso_checksum":       "{{user `md5sum`}}",
+        "http_directory":     "http",
+  
+        "ssh_username":       "{{user `user`}}",
+        "ssh_password":       "{{user `password`}}",
+        "ssh_port":           22,
+        "ssh_wait_timeout":   "15m",
+  
+        "shutdown_command":   "echo '{{user `password`}}'|sudo -S shutdown -P now",
+  
+        "guest_additions_path":     "VBoxGuestAdditions_{{.Version}}.iso",
+        "virtualbox_version_file":  ".vbox_version",
+        "vm_name":                  "packer-{{user `name`}}-vbox",
+        "vboxmanage": [
+            [ "modifyvm", "{{.Name}}", "--memory", "{{user `memory`}}" ],
+            [ "modifyvm", "{{.Name}}", "--cpus", "{{user `cpus`}}" ]
+        ]
+      }
+    ],
+  
+    "provisioners": [
+      {
+        "type":               "shell",
+        "execute_command":    "echo '{{user `password`}}' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+        "scripts": [
+          "http/01vagrant_pvn.sh",
+          "http/02package.sh",
+          "http/11install_docker.sh",
+          "http/12install_k3d.sh",
+          "http/13install_k8s_tool.sh"
+        ]
+      },
+      {
+        "type":   "shell",
+        "execute_command":    "echo '{{user `password`}}' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+        "inline": "sudo reboot",
+        "expect_disconnect": true
+      },
+      {
+        "type":               "shell",
+        "execute_command":    "echo '{{user `password`}}' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+        "scripts": [
+          "http/90vbox_addition.sh",
+          "http/98cleanup.sh",
+          "http/99minimize.sh"
+        ]
+      }
+    ],
+  
+    "post-processors": [
+      {
+        "type":                   "vagrant",
+        "output":                 "boxes/{{user `name`}}-vbox.box"
+      }
+    ]
+  }

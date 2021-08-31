@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Set build date
 date > /etc/vagrant_box_build_time

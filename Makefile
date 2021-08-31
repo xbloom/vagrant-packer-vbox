@@ -14,6 +14,9 @@ vagrant-init:
 build:
 	PACKER_LOG=1 packer build rocky-8.4-x86_64-vbox.json
 
+k3d:
+	PACKER_LOG=1 packer build rocky-8.4-k3d-4.8.8-vbox.json
+
 run:
 	vagrant destroy
 	vagrant box remove -f $(box) || true

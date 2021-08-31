@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ux 
+set -eu
 
 dnf install -y \
 chrony \
@@ -20,7 +20,8 @@ curl \
 rsync \
 socat \
 traceroute \
-epel-release
+epel-release \
+jq 
 
 sed -e 's|^metalink=|#metalink=|g' \
     -e 's|^#baseurl=https\?://download.fedoraproject.org/pub/epel/|baseurl=https://mirror.sjtu.edu.cn/fedora/epel/|g' \
